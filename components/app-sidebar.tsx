@@ -1,74 +1,37 @@
 "use client";
 
 import * as React from "react";
-import { Bot, Server, Settings2, SquareTerminal } from "lucide-react";
+import { Bot, Server, Settings2, Plus } from "lucide-react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+
 import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 
+import { useServicesSidebar } from "@/hooks/useServicesSidebar";
+import { DriftIndicator } from "./drift-indicator";
+import { ApplyReloadButton } from "./apply-reload-button";
 
-const data = {
-  navMain: [
-    {
-      title: "System Monitor",
-      url: "system-monitor",
-      icon: Bot,
-    },
-    {
-      title: "Tenant Servers",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Management Console",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "Manage Tenant Servers",
-          url: "tenant-servers",
-        },
-        {
-          title: "Masnage Users",
-          url: "users",
-        },
-        {
-          title: "Audit Logs",
-          url: "audit-logs",
-        },
-      ],
-    },
-  ],
-};
+interface Service {
+  name: string;
+  status: "online" | "offline";
+}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+  const { services, isLoading } = useServicesSidebar();
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <SidebarMenuButton
-          size="lg"
-          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-        >
-          <div className="text-sidebar-primary flex aspect-square size-8 items-center justify-center rounded-lg">
+        <SidebarMenuButton size="lg">
+          <div className="flex size-8 items-center justify-center rounded-lg">
             <Server />
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
@@ -79,9 +42,94 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         </SidebarMenuButton>
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        {/* Static section */}
+        <NavMain
+          items={[
+            {
+              title: "System Monitor",
+              url: "/system-monitor",
+              icon: Bot,
+            },
+          ]}
+        />
+
+        {/* Tenant Services */}
+        <div className="mt-4 px-2">
+          <div className="flex items-center justify-between px-2 text-xs font-semibold text-muted-foreground">
+            <span>Tenant Services</span>
+            <Link href="/services/new">
+              <Plus className="h-4 w-4 cursor-pointer hover:text-foreground" />
+            </Link>
+          </div>
+
+          <div className="mt-2 space-y-1">
+            {isLoading && (
+              <div className="px-2 text-xs text-muted-foreground">Loading…</div>
+            )}
+
+            {services.map((service: Service) => {
+              const active = pathname === `/services/${service.name}`;
+
+              return (
+                <Link
+                  key={service.name}
+                  href={`/services/${service.name}`}
+                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm
+                    ${
+                      active
+                        ? "bg-sidebar-accent"
+                        : "hover:bg-sidebar-accent/50"
+                    }
+                  `}
+                >
+                  {/* status dot */}
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      service.status === "online"
+                        ? "bg-green-500"
+                        : "bg-gray-400"
+                    }`}
+                  />
+
+                  <span className="truncate">{service.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Management Console */}
+        <NavMain
+          items={[
+            {
+              title: "Management Console",
+              icon: Settings2,
+              url: "/settings",
+              items: [
+                {
+                  title: "Services",
+                  url: "/services",
+                },
+                {
+                  title: "Users",
+                  url: "/users",
+                },
+              ],
+            },
+          ]}
+        />
       </SidebarContent>
+      <SidebarFooter>
+        <div className="flex items-center gap-3">
+          <ApplyReloadButton />
+        </div>
+
+        <div className="text-xs text-center">
+          Drift Status: <DriftIndicator />
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
