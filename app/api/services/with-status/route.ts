@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
-import Service from "@/models/Service";
+import Service from "@/models/service";
 import { pm2JList } from "@/lib/pm2";
 
 export async function GET() {

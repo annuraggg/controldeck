@@ -20,6 +20,11 @@ const SettingsSchema = new Schema({
     type: String,
     default: "serve",
   },
+
+  readOnly: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export default models.Settings || model("Settings", SettingsSchema);

@@ -13,9 +13,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useSettings } from "@/hooks/useSettings";
 
 export function ApplyReloadButton() {
   const [loading, setLoading] = useState(false);
+  const { settings } = useSettings();
+  const readOnly = settings?.readOnly;
 
   async function applyReload() {
     setLoading(true);
@@ -26,7 +29,9 @@ export function ApplyReloadButton() {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive">Apply & reload PM2</Button>
+        <Button variant="destructive" disabled={readOnly}>
+          {readOnly ? "Read-only mode" : "Apply & reload PM2"}
+        </Button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>
@@ -40,7 +45,10 @@ export function ApplyReloadButton() {
 
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={applyReload} disabled={loading}>
+          <AlertDialogAction
+            onClick={applyReload}
+            disabled={loading || readOnly}
+          >
             {loading ? "Reloading…" : "Reload PM2"}
           </AlertDialogAction>
         </AlertDialogFooter>

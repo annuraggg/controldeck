@@ -17,6 +17,13 @@ export async function POST(
   { params }: { params: Promise<{ name: string }> }
 ) {
   const settings = await getSettings();
+  if (settings.readOnly) {
+    return NextResponse.json(
+      { error: "Read-only mode enabled" },
+      { status: 403 }
+    );
+  }
+
   ensureEcosystemFile(settings.ecosystemPath);
 
   const { action } = await req.json();
@@ -30,7 +37,9 @@ export async function POST(
     let output = "";
 
     if (action === "start") {
-      output = await run(`pm2 start ecosystem.config.js --only ${name}`);
+      output = await run(
+        `pm2 start ${settings.ecosystemPath} --only ${name}`
+      );
     } else {
       output = await run(`pm2 ${action} ${name}`);
     }

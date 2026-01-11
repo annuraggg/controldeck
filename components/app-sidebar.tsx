@@ -17,6 +17,7 @@ import {
 import { useServicesSidebar } from "@/hooks/useServicesSidebar";
 import { DriftIndicator } from "./drift-indicator";
 import { ApplyReloadButton } from "./apply-reload-button";
+import { useSettings } from "@/hooks/useSettings";
 
 interface Service {
   name: string;
@@ -26,6 +27,8 @@ interface Service {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { services, isLoading } = useServicesSidebar();
+  const { settings } = useSettings();
+  const readOnly = settings?.readOnly;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -39,6 +42,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="truncate text-xs">
               {process.env.NEXT_PUBLIC_SERVER_NAME} Server
             </span>
+            {readOnly && (
+              <span className="text-[10px] font-medium text-yellow-600">
+                Read-only mode
+              </span>
+            )}
           </div>
         </SidebarMenuButton>
       </SidebarHeader>
@@ -59,7 +67,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="mt-4 px-2">
           <div className="flex items-center justify-between px-2 text-xs font-semibold text-muted-foreground">
             <span>Tenant Services</span>
-            <Link href="/services/new">
+            <Link
+              href="/services/new"
+              className={readOnly ? "pointer-events-none opacity-50" : ""}
+              aria-disabled={readOnly}
+            >
               <Plus className="h-4 w-4 cursor-pointer hover:text-foreground" />
             </Link>
           </div>
