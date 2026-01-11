@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/hooks/useSettings";
+import { AlertTriangle } from "lucide-react";
 
 export function ApplyReloadButton() {
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,12 @@ export function ApplyReloadButton() {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" disabled={readOnly}>
+        <Button
+          variant="destructive"
+          className="w-full justify-center font-semibold"
+          disabled={readOnly}
+        >
+          <AlertTriangle className="h-4 w-4" />
           {readOnly ? "Read-only mode" : "Apply & reload PM2"}
         </Button>
       </AlertDialogTrigger>
@@ -38,8 +44,9 @@ export function ApplyReloadButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>Reload all PM2 services?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will regenerate the ecosystem file and reload all PM2-managed
-            services. Running processes may restart.
+            This regenerates the ecosystem file and reloads all PM2-managed services.
+            Running processes may restart. No changes are applied automatically—this is
+            an explicit, disruptive action.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
