@@ -10,10 +10,24 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const settings = await getSettings();
 
-  if (body.ecosystemPath) {
-    settings.ecosystemPath = body.ecosystemPath.trim();
-    await settings.save();
-  }
+   const canWrite = !settings.readOnly || body.readOnly === false;
 
-  return NextResponse.json(settings);
+   if (!canWrite) {
+     return NextResponse.json(
+       { error: "Read-only mode enabled" },
+       { status: 403 }
+     );
+   }
+
+   if (body.ecosystemPath && !settings.readOnly) {
+     settings.ecosystemPath = body.ecosystemPath.trim();
+   }
+
+   if (body.readOnly !== undefined) {
+     settings.readOnly = !!body.readOnly;
+   }
+
+   await settings.save();
+
+   return NextResponse.json(settings);
 }

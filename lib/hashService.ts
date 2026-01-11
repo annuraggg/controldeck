@@ -13,6 +13,7 @@ export async function hashServices() {
     args: s.args,
     interpreter: s.interpreter,
     env: s.env,
+    port: s.port,
     exec_mode: s.exec_mode,
     watch: s.watch,
     autorestart: s.autorestart,

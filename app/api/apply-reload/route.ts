@@ -16,6 +16,12 @@ function run(cmd: string) {
 
 export async function POST() {
   const settings = await getSettings();
+  if (settings.readOnly) {
+    return NextResponse.json(
+      { error: "Read-only mode enabled" },
+      { status: 403 }
+    );
+  }
 
   ensureEcosystemFile(settings.ecosystemPath);
   await generateEcosystem(settings.ecosystemPath);

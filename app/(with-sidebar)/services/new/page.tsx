@@ -13,9 +13,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useSettings } from "@/hooks/useSettings";
 
 export default function NewServicePage() {
   const router = useRouter();
+  const { settings, isLoading } = useSettings();
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +62,14 @@ export default function NewServicePage() {
 
       const created = await res.json();
       router.push(`/services/${created.name}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create service");
       setSubmitting(false);
     }
   }
+
+  const readOnly = settings?.readOnly;
+  const disabled = submitting || readOnly || isLoading;
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -75,6 +80,11 @@ export default function NewServicePage() {
           Register a new PM2 service in ControlDeck. This does not start the
           service automatically.
         </p>
+        {readOnly && (
+          <p className="text-sm text-yellow-700">
+            Read-only mode enabled. Creating services is disabled.
+          </p>
+        )}
       </div>
 
       {/* Form */}
@@ -88,13 +98,18 @@ export default function NewServicePage() {
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
             required
+            disabled={disabled}
           />
         </div>
 
         {/* Service type */}
         <div className="space-y-1">
           <Label>Service type</Label>
-          <Select value={form.kind} onValueChange={(v) => update("kind", v)}>
+          <Select
+            value={form.kind}
+            onValueChange={(v) => update("kind", v)}
+            disabled={disabled}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -115,6 +130,7 @@ export default function NewServicePage() {
             value={form.cwd}
             onChange={(e) => update("cwd", e.target.value)}
             required
+            disabled={disabled}
           />
         </div>
 
@@ -127,6 +143,7 @@ export default function NewServicePage() {
             value={form.script}
             onChange={(e) => update("script", e.target.value)}
             required
+            disabled={disabled}
           />
         </div>
 
@@ -138,6 +155,7 @@ export default function NewServicePage() {
             placeholder="3000"
             value={form.port}
             onChange={(e) => update("port", e.target.value)}
+            disabled={disabled}
           />
         </div>
 
@@ -146,7 +164,7 @@ export default function NewServicePage() {
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="submit" disabled={submitting}>
+          <Button type="submit" disabled={disabled}>
             {submitting ? "Creating…" : "Create Service"}
           </Button>
         </div>

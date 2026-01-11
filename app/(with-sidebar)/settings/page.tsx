@@ -11,12 +11,16 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
         setEcosystemPath(data.ecosystemPath);
+        setReadOnly(!!data.readOnly);
         setLoading(false);
       });
   }, []);
@@ -24,15 +28,56 @@ export default function SettingsPage() {
   async function save() {
     setSaving(true);
     setSaved(false);
+    setError(null);
 
-    await fetch("/api/settings", {
+    const res = await fetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ecosystemPath }),
+      body: JSON.stringify({ ecosystemPath, readOnly }),
     });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error || "Failed to save settings");
+      setSaving(false);
+      return;
+    }
 
     setSaving(false);
     setSaved(true);
+  }
+
+  async function exportConfig() {
+    setExporting(true);
+    setError(null);
+
+    const res = await fetch("/api/export");
+    const data = await res.json();
+
+    const timestamp = data.timestamp || new Date().toISOString();
+
+    const servicesBlob = new Blob(
+      [JSON.stringify(data.services ?? [], null, 2)],
+      {
+        type: "application/json",
+      }
+    );
+    const ecosystemBlob = new Blob(
+      [data.ecosystem ?? "// Ecosystem file not found"],
+      { type: "text/javascript" }
+    );
+
+    const servicesLink = document.createElement("a");
+    servicesLink.href = URL.createObjectURL(servicesBlob);
+    servicesLink.download = `controldeck-services-${timestamp}.json`;
+    servicesLink.click();
+
+    const ecosystemLink = document.createElement("a");
+    ecosystemLink.href = URL.createObjectURL(ecosystemBlob);
+    ecosystemLink.download = `ecosystem-${timestamp}.js`;
+    ecosystemLink.click();
+
+    setExporting(false);
   }
 
   if (loading) return <div>Loading…</div>;
@@ -47,6 +92,8 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      {error && <p className="text-sm text-destructive">{error}</p>}
+
       {/* Ecosystem path */}
       <div className="space-y-4">
         <div className="space-y-1">
@@ -56,6 +103,7 @@ export default function SettingsPage() {
             value={ecosystemPath}
             onChange={(e) => setEcosystemPath(e.target.value)}
             placeholder="/home/apsit/ecosystem.config.js"
+            disabled={saving || loading || readOnly}
           />
           <p className="text-xs text-muted-foreground">
             ControlDeck will generate and manage this file. If it does not
@@ -63,13 +111,35 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        <div className="flex items-center gap-2">
+          <input
+            id="readOnly"
+            type="checkbox"
+            checked={readOnly}
+            onChange={(e) => setReadOnly(e.target.checked)}
+            disabled={saving || loading}
+          />
+          <Label htmlFor="readOnly">Enable read-only mode</Label>
+        </div>
+
         <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={saving}>
+          <Button onClick={save} disabled={saving || loading}>
             {saving ? "Saving…" : "Save settings"}
           </Button>
 
           {saved && <span className="text-sm text-green-600">Saved</span>}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-lg font-medium">Backup / Export</h2>
+        <p className="text-sm text-muted-foreground">
+          Download the current intent (MongoDB) and generated ecosystem file as
+          timestamped archives. This does not modify any files.
+        </p>
+        <Button onClick={exportConfig} disabled={exporting}>
+          {exporting ? "Preparing…" : "Export config"}
+        </Button>
       </div>
     </div>
   );

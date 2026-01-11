@@ -20,6 +20,8 @@ type DesiredData = {
   cwd: string;
   script: string;
   args?: string;
+  env?: Record<string, string>;
+  enabled?: boolean;
 };
 
 type ServiceData = {
@@ -28,6 +30,7 @@ type ServiceData = {
   enabled: boolean;
   desired: DesiredData | null;
   runtime: RuntimeData | null;
+  readOnly: boolean;
 };
 
 function formatUptime(ms: number) {
@@ -78,6 +81,7 @@ export default function ServicePage({
   if (!data) return <div>Service not found</div>;
 
   const { runtime, desired } = data;
+  const readOnly = data.readOnly;
 
   return (
     <div className="max-w-5xl space-y-10">
@@ -89,9 +93,9 @@ export default function ServicePage({
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
-          disabled={busy || !!runtime}
+          disabled={busy || !!runtime || readOnly}
           onClick={() => control("start")}
           className="rounded-md bg-green-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
         >
@@ -107,12 +111,18 @@ export default function ServicePage({
         </button>
 
         <button
-          disabled={busy || !runtime}
+          disabled={busy || !runtime || readOnly}
           onClick={() => control("stop")}
           className="rounded-md bg-red-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
         >
           Stop
         </button>
+
+        {readOnly && (
+          <span className="text-xs text-yellow-700">
+            Actions are disabled in read-only mode.
+          </span>
+        )}
       </div>
 
       {/* Runtime section */}
@@ -190,15 +200,17 @@ export default function ServicePage({
       </section>
 
       <ServiceLogs name={name} />
-      <ServiceConfigEditor
-        service={desired}
-        onSaved={(updated) => {
-          setData((d: any) => ({
-            ...d,
-            desired: updated,
-          }));
-        }}
-      />
+       {desired && (
+         <ServiceConfigEditor
+           key={JSON.stringify(desired)}
+           serviceName={name}
+           service={desired}
+           readOnly={readOnly}
+           onSaved={(updated) => {
+             setData((d) => (d ? { ...d, desired: updated } : d));
+           }}
+         />
+       )}
     </div>
   );
 }

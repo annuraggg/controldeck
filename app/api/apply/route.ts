@@ -6,6 +6,12 @@ import { hashServices } from "@/lib/hashService";
 
 export async function POST() {
   const settings = await getSettings();
+  if (settings.readOnly) {
+    return NextResponse.json(
+      { error: "Read-only mode enabled" },
+      { status: 403 }
+    );
+  }
   const hash = await hashServices();
   settings.lastAppliedHash = hash;
 
