@@ -45,10 +45,11 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, output });
-  } catch (e: any) {
+  } catch (e) {
     console.error(e);
+    const message = e instanceof Error ? e.message : String(e);
     return NextResponse.json(
-      { success: false, error: e.toString() },
+      { success: false, error: message },
       { status: 500 }
     );
   }

@@ -1,3 +1,4 @@
+import path from "path";
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";
 
@@ -9,25 +10,36 @@ export async function GET() {
 export async function PUT(req: Request) {
   const body = await req.json();
   const settings = await getSettings();
+  const nextPath =
+    typeof body.ecosystemPath === "string"
+      ? body.ecosystemPath.trim()
+      : undefined;
 
-   const canWrite = !settings.readOnly || body.readOnly === false;
+  const canWrite = !settings.readOnly || body.readOnly === false;
 
-   if (!canWrite) {
-     return NextResponse.json(
-       { error: "Read-only mode enabled" },
-       { status: 403 }
-     );
-   }
+  if (!canWrite) {
+    return NextResponse.json(
+      { error: "Read-only mode enabled" },
+      { status: 403 }
+    );
+  }
 
-   if (body.ecosystemPath && !settings.readOnly) {
-     settings.ecosystemPath = body.ecosystemPath.trim();
-   }
+  if (nextPath && !path.isAbsolute(nextPath)) {
+    return NextResponse.json(
+      { error: "Path must be an absolute filesystem path" },
+      { status: 400 }
+    );
+  }
 
-   if (body.readOnly !== undefined) {
-     settings.readOnly = !!body.readOnly;
-   }
+  if (nextPath && !settings.readOnly) {
+    settings.ecosystemPath = nextPath;
+  }
 
-   await settings.save();
+  if (body.readOnly !== undefined) {
+    settings.readOnly = !!body.readOnly;
+  }
 
-   return NextResponse.json(settings);
+  await settings.save();
+
+  return NextResponse.json(settings);
 }
