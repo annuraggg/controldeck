@@ -2,14 +2,26 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Service from "@/models/service";
 import { getSettings } from "@/lib/settings";
+import { requireApiAuth } from "@/lib/auth";
+import { isServiceAllowed } from "@/lib/rbac";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireApiAuth(req, { permission: "services:read" });
+  if (auth.response) return auth.response;
+
   await connectDB();
-  const services = await Service.find().sort({ name: 1 });
+  const query =
+    auth.user.serviceScopes.length > 0
+      ? { name: { $in: auth.user.serviceScopes } }
+      : {};
+  const services = await Service.find(query).sort({ name: 1 });
   return NextResponse.json(services);
 }
 
 export async function POST(req: Request) {
+  const auth = await requireApiAuth(req, { permission: "services:write" });
+  if (auth.response) return auth.response;
+
   await connectDB();
   const settings = await getSettings();
 
@@ -21,6 +33,9 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
+  if (!isServiceAllowed(auth.user, body.name)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const enabled = body.enabled !== undefined ? !!body.enabled : true;
   const port =

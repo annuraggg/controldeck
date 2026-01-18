@@ -3,15 +3,26 @@ import { connectDB } from "@/lib/mongodb";
 import Service from "@/models/service";
 import { pm2JList } from "@/lib/pm2";
 import { getSettings } from "@/lib/settings";
+import { requireApiAuth } from "@/lib/auth";
+import { isServiceAllowed } from "@/lib/rbac";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
+  const auth = await requireApiAuth(req, {
+    permission: "services:read",
+    serviceName: (await params).name,
+  });
+  if (auth.response) return auth.response;
+
   await connectDB();
   const settings = await getSettings();
 
   const name = (await params).name;
+  if (!isServiceAllowed(auth.user, name)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const service = await Service.findOne({ name });
   const pm2 = await pm2JList();
@@ -51,6 +62,12 @@ export async function PUT(
   req: Request,
   { params }: { params: { name: string } }
 ) {
+  const auth = await requireApiAuth(req, {
+    permission: "services:write",
+    serviceName: params.name,
+  });
+  if (auth.response) return auth.response;
+
   await connectDB();
   const body = await req.json();
   const settings = await getSettings();
@@ -65,6 +82,10 @@ export async function PUT(
   const service = await Service.findOne({ name: params.name });
   if (!service) {
     return NextResponse.json({ error: "Service not found" }, { status: 404 });
+  }
+
+  if (!isServiceAllowed(auth.user, service.name)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const desiredEnabled =

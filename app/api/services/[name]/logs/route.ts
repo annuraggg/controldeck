@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { exec } from "child_process";
+import { requireApiAuth } from "@/lib/auth";
 
 function run(cmd: string) {
   return new Promise<string>((resolve, reject) => {
@@ -14,6 +15,12 @@ export async function GET(
   req: Request,
   { params }: { params: { name: string } }
 ) {
+  const auth = await requireApiAuth(req, {
+    permission: "services:logs",
+    serviceName: params.name,
+  });
+  if (auth.response) return auth.response;
+
   const { searchParams } = new URL(req.url);
   const lines = searchParams.get("lines") || "200";
 
