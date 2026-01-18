@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -15,49 +15,76 @@ import { MetricPoint } from "./useSystemMetrics";
 
 export function MetricChart({
   title,
+  subtitle,
   data,
   dataKey,
   cssColorVar,
   unit,
   WINDOW_MS,
+  muted,
 }: {
   title: string;
+  subtitle?: string;
   data: MetricPoint[];
   dataKey: keyof MetricPoint;
   cssColorVar: string;
   unit?: string;
   WINDOW_MS: number;
+  muted?: boolean;
 }) {
-  const [color, setColor] = useState<string | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const color = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue(cssColorVar)
+      .trim();
+  }, [cssColorVar]);
 
   const latest = data[data.length - 1]?.[dataKey];
 
-  // Resolve CSS color safely in browser
-  useEffect(() => {
-    const value = getComputedStyle(document.documentElement)
-      .getPropertyValue(cssColorVar)
-      .trim();
-    setColor(value);
-  }, [cssColorVar]);
-
-  // Advance the time window
-  useEffect(() => {
-    const id = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
   if (!color) return null;
 
-  const endTs = data.length ? data[data.length - 1].ts : Date.now();
+  if (data.length === 0) {
+    return (
+      <Card
+        className={
+          muted
+            ? "border-dashed border-muted-foreground/50 bg-muted/40"
+            : undefined
+        }
+      >
+        <CardHeader className="flex flex-row items-baseline justify-between pb-2">
+          <div className="space-y-0.5">
+            <span className="text-sm font-medium">{title}</span>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="h-[220px]">
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            Waiting for data…
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const endTs = data[data.length - 1].ts;
   const startTs = endTs - WINDOW_MS;
 
   return (
-    <Card>
+    <Card
+      className={
+        muted ? "border-dashed border-muted-foreground/50 bg-muted/40" : undefined
+      }
+    >
       <CardHeader className="flex flex-row items-baseline justify-between pb-2">
-        <span className="text-sm font-medium">{title}</span>
+        <div className="space-y-0.5">
+          <span className="text-sm font-medium">{title}</span>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
         <span className="text-sm font-mono text-muted-foreground">
           {latest?.toFixed(2)}
           {unit}

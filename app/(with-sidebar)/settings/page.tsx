@@ -106,8 +106,10 @@ export default function SettingsPage() {
             disabled={saving || loading || readOnly}
           />
           <p className="text-xs text-muted-foreground">
-            ControlDeck will generate and manage this file. If it does not
-            exist, it will be created automatically.
+            Absolute path to the PM2 ecosystem file. Changing this does not
+            affect running services until Apply Changes. ControlDeck will
+            generate and manage this file; if it does not exist, it will be
+            created automatically.
           </p>
         </div>
 

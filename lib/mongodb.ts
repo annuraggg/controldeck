@@ -6,10 +6,18 @@ if (!MONGODB_URI) {
   throw new Error("MONGODB_URI not defined");
 }
 
-let cached = (global as any).mongoose;
+type MongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
+
+let cached = (global as typeof globalThis & { mongoose?: MongooseCache })
+  .mongoose;
 
 if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+  cached = { conn: null, promise: null };
+  (global as typeof globalThis & { mongoose?: MongooseCache }).mongoose =
+    cached;
 }
 
 export async function connectDB() {
