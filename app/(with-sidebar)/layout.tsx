@@ -8,8 +8,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="bg-muted/40">
-        <div className="mx-auto w-full max-w-6xl space-y-6 px-6 py-8 lg:px-10">
-          <SystemStateBar />
+        <div className="mx-auto w-full space-y-6 py-8 px-8">
           <ReadOnlyBanner />
           {children}
         </div>

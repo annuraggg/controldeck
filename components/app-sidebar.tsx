@@ -121,9 +121,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold uppercase text-muted-foreground group-hover:text-foreground">
-                    {active ? "Active" : "Open"}
-                  </span>
                 </Link>
               );
             })}
