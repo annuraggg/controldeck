@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bot, Server, Settings2, Plus } from "lucide-react";
+import { Bot, BookOpen, Server, Settings2, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -67,6 +67,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               title: "System Monitor",
               url: "/system-monitor",
               icon: Bot,
+            },
+            {
+              title: "Docs",
+              url: "/docs",
+              icon: BookOpen,
             },
           ]}
         />

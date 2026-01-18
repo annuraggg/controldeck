@@ -1,0 +1,5 @@
+export const METRIC_SAMPLE_INTERVAL_MS = 30_000;
+export const METRIC_TTL_SECONDS = 60 * 60 * 24;
+
+export const HISTORY_BUFFER_SAMPLES = 5;
+export const HISTORY_MAX_SAMPLES = 300;
