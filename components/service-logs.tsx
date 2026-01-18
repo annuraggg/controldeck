@@ -27,23 +27,36 @@ export function ServiceLogs({ name }: { name: string }) {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">Logs</h2>
-        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Logs</h2>
+          <p className="text-xs text-muted-foreground">
+            Recent events (last 200 lines). Refresh to fetch the latest entries.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
           {loading ? "Loading…" : "Refresh"}
         </Button>
       </div>
 
-      <div className="rounded-md border bg-black text-white text-xs font-mono p-3 max-h-100 overflow-auto">
-        {logs.length === 0 && (
-          <div className="text-muted-foreground">No logs available.</div>
-        )}
+      <div className="overflow-hidden rounded-lg border bg-slate-950 text-slate-100 shadow-sm">
+        <div className="max-h-[360px] overflow-auto">
+          {logs.length === 0 && !loading && (
+            <div className="px-4 py-8 text-sm text-slate-400">
+              No logs available for this service yet.
+            </div>
+          )}
 
-        {logs.map((log, i) => (
-          <div key={i} className="whitespace-pre-wrap">
-            <span className="text-green-400">{log.at}</span> {log.data}
-          </div>
-        ))}
+          {logs.map((log, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-[auto,1fr] gap-4 border-b border-white/5 px-4 py-2 font-mono text-xs last:border-b-0"
+            >
+              <span className="text-amber-200/90 tabular-nums">{log.at}</span>
+              <span className="whitespace-pre-wrap text-slate-100">{log.data}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
