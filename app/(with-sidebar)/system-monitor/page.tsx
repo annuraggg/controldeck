@@ -10,12 +10,12 @@ import {
   useMetricSampler,
   useSystemMetrics,
 } from "./useSystemMetrics";
+import { METRIC_SAMPLE_INTERVAL_MS } from "@/lib/systemMetrics";
 
 const LIVE_REFRESH_INTERVAL = 10_000;
 const LIVE_WINDOW_MS = 10_000;
 const HISTORICAL_WINDOW_MS = 2 * 60 * 60 * 1000;
 const HISTORICAL_HOURS = 2;
-const SAMPLE_INTERVAL_MS = 30_000;
 
 export default function SystemMonitorPage() {
   const [mode, setMode] = useState<"live" | "historical">("live");
@@ -31,7 +31,7 @@ export default function SystemMonitorPage() {
     refresh: refreshHistorical,
   } = useHistoricalMetrics(HISTORICAL_HOURS, { enabled: mode === "historical" });
 
-  useMetricSampler(SAMPLE_INTERVAL_MS, mode === "historical");
+  useMetricSampler(METRIC_SAMPLE_INTERVAL_MS, mode === "historical");
 
   const showLive = mode === "live";
 

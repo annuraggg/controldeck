@@ -1,8 +1,7 @@
 import si from "systeminformation";
 import { connectDB } from "@/lib/mongodb";
 import SystemMetric from "@/models/systemMetric";
-
-const SAMPLE_INTERVAL_MS = 30_000;
+import { METRIC_SAMPLE_INTERVAL_MS } from "@/lib/systemMetrics";
 
 export async function GET() {
   const now = Date.now();
@@ -29,7 +28,10 @@ export async function GET() {
       .select("timestamp")
       .lean();
 
-    if (!lastSample || now - lastSample.timestamp.getTime() >= SAMPLE_INTERVAL_MS) {
+    if (
+      !lastSample ||
+      now - lastSample.timestamp.getTime() >= METRIC_SAMPLE_INTERVAL_MS
+    ) {
       await SystemMetric.create({
         timestamp: new Date(now),
         cpu: payload.cpu,

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import SystemMetric from "@/models/systemMetric";
+import {
+  HISTORY_BUFFER_SAMPLES,
+  HISTORY_MAX_SAMPLES,
+  METRIC_SAMPLE_INTERVAL_MS,
+} from "@/lib/systemMetrics";
 
 const DEFAULT_HOURS = 2;
 const MAX_HOURS = 24;
@@ -19,8 +24,9 @@ export async function GET(request: Request) {
 
     const since = new Date(Date.now() - hours * 60 * 60 * 1000);
     const expectedSamples = Math.min(
-      Math.ceil((hours * 60 * 60 * 1000) / 30_000) + 5,
-      300
+      Math.ceil((hours * 60 * 60 * 1000) / METRIC_SAMPLE_INTERVAL_MS) +
+        HISTORY_BUFFER_SAMPLES,
+      HISTORY_MAX_SAMPLES
     );
 
     const metrics = await SystemMetric.find({ timestamp: { $gte: since } })
