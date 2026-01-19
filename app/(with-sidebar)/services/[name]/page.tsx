@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { Play, RotateCcw, Square } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 type RuntimeData = {
   status: string;
@@ -52,10 +54,14 @@ export default function ServicePage({
   params: Promise<{ name: string }>;
 }) {
   const [data, setData] = useState<ServiceData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { name } = use(params);
+  const { user, isLoading: authLoading } = useAuth();
 
   const [busy, setBusy] = useState(false);
+  const canControl = hasPermission(user, "services:control");
+  const canEdit = hasPermission(user, "services:write");
+  const canRead = hasPermission(user, "services:read");
 
   async function control(action: "start" | "stop" | "restart") {
     setBusy(true);
@@ -75,16 +81,35 @@ export default function ServicePage({
   }
 
   useEffect(() => {
-    fetch(`/api/services/${name}`)
-      .then((res) => res.json())
-      .then((d) => {
-        setData(d);
+    if (!canRead) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    fetch(`/api/services/${name}`).then(async (res) => {
+      if (!res.ok) {
+        setData(null);
         setLoading(false);
-      });
-  }, [name]);
+        return;
+      }
+      const d = await res.json();
+      setData(d);
+      setLoading(false);
+    });
+  }, [name, canRead]);
+
+  if (authLoading) {
+    return <div>Loading…</div>;
+  }
+
+  if (!canRead) {
+    return (
+      <div className="rounded-lg border bg-muted/30 p-4">
+        You do not have permission to view this service.
+      </div>
+    );
+  }
 
   if (loading) return <div>Loading…</div>;
-  if (!data) return <div>Service not found</div>;
+  if (!data) return <div>Service not found or forbidden</div>;
 
   const { runtime, desired } = data;
   const readOnly = data.readOnly;
@@ -181,7 +206,7 @@ export default function ServicePage({
               <span>
                 <Button
                   onClick={() => control("start")}
-                  disabled={busy || !!runtime || readOnly}
+                  disabled={busy || !!runtime || readOnly || !canControl}
                   className="bg-emerald-600 text-white hover:bg-emerald-700"
                 >
                   <Play className="h-4 w-4" />
@@ -198,7 +223,7 @@ export default function ServicePage({
                 <Button
                   variant="secondary"
                   onClick={() => control("restart")}
-                  disabled={busy || !runtime}
+                  disabled={busy || !runtime || !canControl || readOnly}
                 >
                   <RotateCcw className="h-4 w-4" />
                   Restart
@@ -214,7 +239,7 @@ export default function ServicePage({
                 <Button
                   variant="destructive"
                   onClick={() => control("stop")}
-                  disabled={busy || !runtime || readOnly}
+                  disabled={busy || !runtime || readOnly || !canControl}
                 >
                   <Square className="h-4 w-4" />
                   Stop
@@ -323,7 +348,7 @@ export default function ServicePage({
                 key={JSON.stringify(desired)}
                 serviceName={name}
                 service={desired}
-                readOnly={readOnly}
+                readOnly={readOnly || !canEdit}
                 onSaved={(updated) => {
                   setData((d) => (d ? { ...d, desired: updated } : d));
                 }}

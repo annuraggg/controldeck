@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 type ServiceSummary = {
   name: string;
@@ -35,6 +37,9 @@ export default function ServicesPage() {
   const [processing, setProcessing] = useState(false);
   const { settings } = useSettings();
   const readOnly = settings?.readOnly;
+  const { user, isLoading: authLoading } = useAuth();
+  const canRead = hasPermission(user, "services:read");
+  const canControl = hasPermission(user, "services:control");
 
   const selectedList = useMemo(() => Array.from(selected), [selected]);
 
@@ -55,8 +60,10 @@ export default function ServicesPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (canRead) {
+      load();
+    }
+  }, [canRead]);
 
   function toggle(name: string) {
     setSelected((prev) => {
@@ -116,9 +123,19 @@ export default function ServicesPage() {
             Read-only mode enabled. Runtime actions are disabled.
           </p>
         )}
+        {!canControl && (
+          <p className="text-sm text-muted-foreground">
+            You can view services but lack permission to control runtime state.
+          </p>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {!canRead && !authLoading && (
+        <p className="text-sm text-muted-foreground">
+          You do not have permission to view services.
+        </p>
+      )}
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
@@ -126,11 +143,16 @@ export default function ServicesPage() {
             type="checkbox"
             checked={selected.size === services.length && services.length > 0}
             onChange={toggleAll}
-            disabled={loading}
+            disabled={loading || !canControl || readOnly}
           />
           <span>Select all</span>
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={load}
+          disabled={loading || !canRead}
+        >
           Refresh
         </Button>
       </div>
@@ -148,7 +170,7 @@ export default function ServicesPage() {
                   type="checkbox"
                   checked={selected.has(s.name)}
                   onChange={() => toggle(s.name)}
-                  disabled={loading || readOnly}
+                  disabled={loading || readOnly || !canControl}
                 />
                 <div>
                   <div className="text-sm font-medium">{s.name}</div>
@@ -182,7 +204,7 @@ export default function ServicesPage() {
             variant="secondary"
             size="sm"
             onClick={() => setActionToConfirm("start")}
-            disabled={readOnly || processing}
+            disabled={readOnly || processing || !canControl}
           >
             Start selected
           </Button>
@@ -190,7 +212,7 @@ export default function ServicesPage() {
             variant="secondary"
             size="sm"
             onClick={() => setActionToConfirm("restart")}
-            disabled={readOnly || processing}
+            disabled={readOnly || processing || !canControl}
           >
             Restart selected
           </Button>
@@ -198,7 +220,7 @@ export default function ServicesPage() {
             variant="destructive"
             size="sm"
             onClick={() => setActionToConfirm("stop")}
-            disabled={readOnly || processing}
+            disabled={readOnly || processing || !canControl}
           >
             Stop selected
           </Button>
@@ -226,7 +248,7 @@ export default function ServicesPage() {
             <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={performAction}
-              disabled={processing || readOnly}
+              disabled={processing || readOnly || !canControl}
             >
               {processing ? "Working…" : "Confirm"}
             </AlertDialogAction>

@@ -1,7 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ReadOnlyBanner } from "@/components/read-only-banner";
-import { SystemStateBar } from "@/components/system-state-bar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

@@ -15,11 +15,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/hooks/useSettings";
 import { AlertTriangle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 export function ApplyReloadButton() {
   const [loading, setLoading] = useState(false);
   const { settings } = useSettings();
   const readOnly = settings?.readOnly;
+  const { user } = useAuth();
+  const canApply = hasPermission(user, "pm2:apply");
 
   async function applyReload() {
     setLoading(true);
@@ -33,10 +37,14 @@ export function ApplyReloadButton() {
         <Button
           variant="destructive"
           className="w-full justify-center font-semibold"
-          disabled={readOnly}
+          disabled={readOnly || !canApply}
         >
           <AlertTriangle className="h-4 w-4" />
-          {readOnly ? "Read-only mode" : "Apply & reload PM2"}
+          {readOnly
+            ? "Read-only mode"
+            : !canApply
+            ? "Insufficient permission"
+            : "Apply & reload PM2"}
         </Button>
       </AlertDialogTrigger>
 
@@ -54,7 +62,7 @@ export function ApplyReloadButton() {
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={applyReload}
-            disabled={loading || readOnly}
+            disabled={loading || readOnly || !canApply}
           >
             {loading ? "Reloading…" : "Reload PM2"}
           </AlertDialogAction>

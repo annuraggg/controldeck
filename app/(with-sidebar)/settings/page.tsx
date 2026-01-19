@@ -5,25 +5,36 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 export default function SettingsPage() {
   const [ecosystemPath, setEcosystemPath] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [readOnly, setReadOnly] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
+  const canReadSettings = hasPermission(user, "settings:read");
+  const canWriteSettings = hasPermission(user, "settings:write");
 
   useEffect(() => {
+    if (!canReadSettings) {
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
         setEcosystemPath(data.ecosystemPath);
         setReadOnly(!!data.readOnly);
         setLoading(false);
-      });
-  }, []);
+      })
+      .catch(() => setLoading(false));
+  }, [canReadSettings]);
 
   async function save() {
     setSaving(true);
@@ -80,7 +91,14 @@ export default function SettingsPage() {
     setExporting(false);
   }
 
-  if (loading) return <div>Loading…</div>;
+  if (authLoading || loading) return <div>Loading…</div>;
+  if (!canReadSettings) {
+    return (
+      <div className="rounded-lg border bg-muted/30 p-4">
+        You do not have permission to view settings.
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -103,7 +121,7 @@ export default function SettingsPage() {
             value={ecosystemPath}
             onChange={(e) => setEcosystemPath(e.target.value)}
             placeholder="/home/apsit/ecosystem.config.js"
-            disabled={saving || loading || readOnly}
+            disabled={saving || loading || readOnly || !canWriteSettings}
           />
           <p className="text-xs text-muted-foreground">
             Absolute path to the PM2 ecosystem file. Changing this does not
@@ -119,13 +137,13 @@ export default function SettingsPage() {
             type="checkbox"
             checked={readOnly}
             onChange={(e) => setReadOnly(e.target.checked)}
-            disabled={saving || loading}
+            disabled={saving || loading || !canWriteSettings}
           />
           <Label htmlFor="readOnly">Enable read-only mode</Label>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={saving || loading}>
+          <Button onClick={save} disabled={saving || loading || !canWriteSettings}>
             {saving ? "Saving…" : "Save settings"}
           </Button>
 

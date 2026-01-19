@@ -112,7 +112,7 @@ export function ServiceConfigEditor({
         </Button>
         {readOnly && (
           <p className="text-xs text-muted-foreground">
-            Configuration editing is disabled in read-only mode.
+            Configuration editing is disabled by current permissions or read-only mode.
           </p>
         )}
       </div>

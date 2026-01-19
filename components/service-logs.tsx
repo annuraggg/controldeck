@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 type LogSchema = {
   at: string;
@@ -11,6 +13,8 @@ type LogSchema = {
 export function ServiceLogs({ name }: { name: string }) {
   const [logs, setLogs] = useState<LogSchema[]>([]);
   const [loading, setLoading] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
+  const canViewLogs = hasPermission(user, "services:logs");
 
   async function load() {
     setLoading(true);
@@ -21,9 +25,39 @@ export function ServiceLogs({ name }: { name: string }) {
   }
 
   useEffect(() => {
-    load();
+    if (canViewLogs) {
+      load();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
+  }, [name, canViewLogs]);
+
+  if (authLoading) {
+    return (
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Logs</h2>
+            <p className="text-xs text-muted-foreground">Loading access…</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!canViewLogs) {
+    return (
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Logs</h2>
+            <p className="text-xs text-muted-foreground">
+              Log viewing is restricted for this account.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3">

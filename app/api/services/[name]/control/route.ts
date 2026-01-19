@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { exec } from "child_process";
 import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";
+import { requireApiAuth } from "@/lib/auth";
 
 function run(cmd: string) {
   return new Promise<string>((resolve, reject) => {
@@ -16,6 +17,13 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ name: string }> }
 ) {
+  const name = (await params).name;
+  const auth = await requireApiAuth(req, {
+    permission: "services:control",
+    serviceName: name,
+  });
+  if (auth.response) return auth.response;
+
   const settings = await getSettings();
   if (settings.readOnly) {
     return NextResponse.json(
@@ -27,7 +35,6 @@ export async function POST(
   ensureEcosystemFile(settings.ecosystemPath);
 
   const { action } = await req.json();
-  const name = (await params).name;
 
   if (!["start", "stop", "restart"].includes(action)) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

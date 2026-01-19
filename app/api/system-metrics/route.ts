@@ -1,9 +1,10 @@
 import si from "systeminformation";
-import { connectDB } from "@/lib/mongodb";
-import SystemMetric from "@/models/systemMetric";
-import { METRIC_SAMPLE_INTERVAL_MS } from "@/lib/systemMetrics";
+import { requireApiAuth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = await requireApiAuth(req, { permission: "metrics:read" });
+  if (auth.response) return auth.response;
+
   const now = Date.now();
 
   const [cpu, mem, fs, net] = await Promise.all([
@@ -20,27 +21,6 @@ export async function GET() {
     disk: fs[0]?.use ?? 0,
     network: net[0] ? (net[0].rx_sec + net[0].tx_sec) / 1024 : 0,
   };
-
-  try {
-    await connectDB();
-    const lastSample = await SystemMetric.findOne()
-      .sort({ timestamp: -1 })
-      .select("timestamp")
-      .lean();
-
-    if (
-      !lastSample ||
-      now - lastSample.timestamp.getTime() >= METRIC_SAMPLE_INTERVAL_MS
-    ) {
-      await SystemMetric.create({
-        timestamp: new Date(now),
-        cpu: payload.cpu,
-        memory: payload.memory,
-      });
-    }
-  } catch (err) {
-    console.error("Failed to record system metric sample", err);
-  }
 
   return Response.json(payload);
 }

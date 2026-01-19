@@ -4,6 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";
 import { generateEcosystem } from "@/lib/generateEcosystem";
 import { hashServices } from "@/lib/hashService";
+import { requireApiAuth } from "@/lib/auth";
 
 function run(cmd: string) {
   return new Promise<string>((resolve, reject) => {
@@ -14,7 +15,10 @@ function run(cmd: string) {
   });
 }
 
-export async function POST() {
+export async function POST(req: Request) {
+  const auth = await requireApiAuth(req, { permission: "pm2:apply" });
+  if (auth.response) return auth.response;
+
   const settings = await getSettings();
   if (settings.readOnly) {
     return NextResponse.json(

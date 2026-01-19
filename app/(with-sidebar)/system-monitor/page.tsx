@@ -5,23 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 import { MetricChart } from "./MetricChart";
-import {
-  useHistoricalMetrics,
-  useMetricSampler,
-  useSystemMetrics,
-} from "./useSystemMetrics";
-import { METRIC_SAMPLE_INTERVAL_MS } from "@/lib/systemMetrics";
+import { useHistoricalMetrics, useSystemMetrics } from "./useSystemMetrics";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 const LIVE_REFRESH_INTERVAL = 10_000;
 const LIVE_WINDOW_MS = 10_000;
-const HISTORICAL_WINDOW_MS = 2 * 60 * 60 * 1000;
-const HISTORICAL_HOURS = 2;
+const HISTORICAL_HOURS = 1;
+const HISTORICAL_WINDOW_MS = HISTORICAL_HOURS * 60 * 60 * 1000;
 
 export default function SystemMonitorPage() {
   const [mode, setMode] = useState<"live" | "historical">("live");
+  const { user, isLoading: authLoading } = useAuth();
+  const canReadMetrics = hasPermission(user, "metrics:read");
 
   const liveData = useSystemMetrics(LIVE_REFRESH_INTERVAL, {
-    enabled: mode === "live",
+    enabled: mode === "live" && canReadMetrics,
   });
 
   const {
@@ -29,11 +28,31 @@ export default function SystemMonitorPage() {
     loading: historicalLoading,
     error: historicalError,
     refresh: refreshHistorical,
-  } = useHistoricalMetrics(HISTORICAL_HOURS, { enabled: mode === "historical" });
-
-  useMetricSampler(METRIC_SAMPLE_INTERVAL_MS, mode === "historical");
+  } = useHistoricalMetrics(HISTORICAL_HOURS, {
+    enabled: mode === "historical" && canReadMetrics,
+  });
 
   const showLive = mode === "live";
+
+  if (authLoading) {
+    return (
+      <div className="rounded-lg border bg-muted/30 p-6">
+        <h1 className="text-xl font-semibold">System Monitor</h1>
+        <p className="text-sm text-muted-foreground">Loading access…</p>
+      </div>
+    );
+  }
+
+  if (!canReadMetrics) {
+    return (
+      <div className="rounded-lg border bg-muted/30 p-6">
+        <h1 className="text-xl font-semibold">System Monitor</h1>
+        <p className="text-sm text-muted-foreground">
+          You do not have permission to view system metrics.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -42,8 +61,8 @@ export default function SystemMonitorPage() {
           <h1 className="text-2xl font-semibold">System Monitor</h1>
           <p className="text-sm text-muted-foreground">
             {showLive
-              ? "Live system performance (updates every 10s). Samples are stored every 30s while this page is open."
-              : "Recent historical samples (last 2 hours, collected every 30s while this page is open)."}
+              ? "Live system performance (updates every 10s)."
+              : "Recent historical samples (last hour from background collection)."}
           </p>
         </div>
 
@@ -118,8 +137,9 @@ export default function SystemMonitorPage() {
       ) : (
         <div className="space-y-4">
           <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-            Showing last {HISTORICAL_HOURS} hours of CPU and memory samples. No
-            polling; click Refresh to fetch the latest persisted readings.
+            Showing last {HISTORICAL_HOURS} hour
+            {HISTORICAL_HOURS !== 1 ? "s" : ""} of CPU and memory samples collected in the
+            background.
           </div>
 
           {historicalError && (

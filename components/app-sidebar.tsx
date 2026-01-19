@@ -18,6 +18,8 @@ import { useServicesSidebar } from "@/hooks/useServicesSidebar";
 import { DriftIndicator } from "./drift-indicator";
 import { ApplyReloadButton } from "./apply-reload-button";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 interface Service {
   name: string;
@@ -26,9 +28,17 @@ interface Service {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const { services, isLoading } = useServicesSidebar();
+  const { user } = useAuth();
   const { settings } = useSettings();
   const readOnly = settings?.readOnly;
+
+  const canViewServices = hasPermission(user, "services:read");
+  const canCreateServices = hasPermission(user, "services:write");
+  const canManageUsers = hasPermission(user, "users:manage");
+  const canViewSettings = hasPermission(user, "settings:read");
+  const canSeeMonitor = hasPermission(user, "metrics:read");
+  const canSeeDocs = user ? hasPermission(user, "docs:read") : true;
+  const { services, isLoading } = useServicesSidebar(canViewServices);
 
   const statusTone = (status: Service["status"]) => {
     if (status === "online") return "bg-emerald-500/80";
@@ -63,101 +73,108 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Static section */}
         <NavMain
           items={[
-            {
-              title: "System Monitor",
-              url: "/system-monitor",
-              icon: Bot,
-            },
-            {
-              title: "Docs",
-              url: "/docs",
-              icon: BookOpen,
-            },
+            ...(canSeeMonitor
+              ? [
+                  {
+                    title: "System Monitor",
+                    url: "/system-monitor",
+                    icon: Bot,
+                  },
+                ]
+              : []),
+            ...(canSeeDocs
+              ? [
+                  {
+                    title: "Docs",
+                    url: "/docs",
+                    icon: BookOpen,
+                  },
+                ]
+              : []),
           ]}
         />
 
         {/* Tenant Services */}
-        <div className="mt-4 px-3">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>Tenant services</span>
-            <Link
-              href="/services/new"
-              className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
-                readOnly
-                  ? "pointer-events-none border-muted-foreground/30 text-muted-foreground"
-                  : "border-sidebar-border hover:bg-sidebar-accent/70"
-              }`}
-              aria-disabled={readOnly}
-            >
-              <Plus className="h-4 w-4" />
-            </Link>
-          </div>
+        {canViewServices && (
+          <div className="mt-4 px-3">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <span>Tenant services</span>
+              <Link
+                href={canCreateServices ? "/services/new" : "#"}
+                className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
+                  readOnly || !canCreateServices
+                    ? "pointer-events-none border-muted-foreground/30 text-muted-foreground"
+                    : "border-sidebar-border hover:bg-sidebar-accent/70"
+                }`}
+                aria-disabled={readOnly || !canCreateServices}
+              >
+                <Plus className="h-4 w-4" />
+              </Link>
+            </div>
 
-          <div className="mt-2 space-y-1 rounded-lg border border-sidebar-border/70 bg-sidebar-accent/40 p-2">
-            {isLoading && (
-              <div className="rounded-md bg-sidebar-accent/60 px-2 py-1.5 text-xs text-muted-foreground">
-                Loading…
-              </div>
-            )}
+            <div className="mt-2 space-y-1 rounded-lg border border-sidebar-border/70 bg-sidebar-accent/40 p-2">
+              {isLoading && (
+                <div className="rounded-md bg-sidebar-accent/60 px-2 py-1.5 text-xs text-muted-foreground">
+                  Loading…
+                </div>
+              )}
 
-            {services.map((service: Service) => {
-              const active = pathname === `/services/${service.name}`;
+              {services.map((service: Service) => {
+                const active = pathname === `/services/${service.name}`;
 
-              return (
-                <Link
-                  key={service.name}
-                  href={`/services/${service.name}`}
-                  className={`group flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition
+                return (
+                  <Link
+                    key={service.name}
+                    href={`/services/${service.name}`}
+                    className={`group flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition
                   ${
                     active
                       ? "border-sidebar-border bg-sidebar-accent shadow-sm"
                       : "border-transparent hover:border-sidebar-border/60 hover:bg-sidebar-accent/60"
                   }`}
-                >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full ${statusTone(service.status)}`}
-                      aria-label={service.status}
-                    />
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{service.name}</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {service.status === "online" ? "Running" : "Stopped"}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full ${statusTone(service.status)}`}
+                        aria-label={service.status}
+                      />
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{service.name}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {service.status === "online" ? "Running" : "Stopped"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
+                  </Link>
+                );
+              })}
 
-            {!isLoading && services.length === 0 && (
-              <div className="rounded-md border border-dashed border-sidebar-border/80 bg-sidebar-accent/30 px-3 py-2 text-xs text-muted-foreground">
-                No tenant services yet.
-              </div>
-            )}
+              {!isLoading && services.length === 0 && (
+                <div className="rounded-md border border-dashed border-sidebar-border/80 bg-sidebar-accent/30 px-3 py-2 text-xs text-muted-foreground">
+                  No tenant services yet.
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Management Console */}
-        <NavMain
-          items={[
-            {
-              title: "Management Console",
-              icon: Settings2,
-              url: "/settings",
-              items: [
-                {
-                  title: "Services",
-                  url: "/services",
-                },
-                {
-                  title: "Users",
-                  url: "/users",
-                },
-              ],
-            },
-          ]}
-        />
+        {canViewSettings || canManageUsers || canViewServices ? (
+          <NavMain
+            items={[
+              {
+                title: "Management Console",
+                icon: Settings2,
+                url: canViewSettings ? "/settings" : canViewServices ? "/services" : "/users",
+                items: [
+                  ...(canViewServices ? [{ title: "Services", url: "/services" }] : []),
+                  ...(canViewSettings ? [{ title: "Settings", url: "/settings" }] : []),
+                  ...(canManageUsers ? [{ title: "Users", url: "/users" }] : []),
+                ],
+              },
+            ]}
+          />
+        ) : null}
       </SidebarContent>
       <SidebarFooter className="space-y-3 px-3 pb-6">
         <div className="space-y-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3">

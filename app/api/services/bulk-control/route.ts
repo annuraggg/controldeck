@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { exec } from "child_process";
 import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";
+import { requireApiAuth } from "@/lib/auth";
+import { isServiceAllowed } from "@/lib/rbac";
 
 function run(cmd: string) {
   return new Promise<string>((resolve, reject) => {
@@ -13,6 +15,9 @@ function run(cmd: string) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireApiAuth(req, { permission: "services:control" });
+  if (auth.response) return auth.response;
+
   const settings = await getSettings();
 
   if (settings.readOnly) {
@@ -33,6 +38,11 @@ export async function POST(req: Request) {
       { error: "No services selected" },
       { status: 400 }
     );
+  }
+
+  const unauthorized = names.find((name) => !isServiceAllowed(auth.user, name));
+  if (unauthorized) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   if (!["start", "stop", "restart"].includes(action || "")) {

@@ -76,31 +76,3 @@ export function useHistoricalMetrics(hours: number, options?: { enabled?: boolea
 
   return { data, loading, error, refresh: load };
 }
-
-export function useMetricSampler(intervalMs: number, enabled: boolean) {
-  useEffect(() => {
-    if (!enabled) return;
-
-    let cancelled = false;
-
-    const collect = async () => {
-      try {
-        await fetch("/api/system-metrics");
-      } catch {
-        // ignore sampling errors
-      }
-    };
-
-    collect();
-    const id = setInterval(() => {
-      if (!cancelled) {
-        collect();
-      }
-    }, intervalMs);
-
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [intervalMs, enabled]);
-}

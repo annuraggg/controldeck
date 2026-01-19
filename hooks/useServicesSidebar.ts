@@ -2,11 +2,11 @@ import useSWR from "swr";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-export function useServicesSidebar() {
+export function useServicesSidebar(enabled = true) {
   const { data, error, isLoading } = useSWR(
-    "/api/services/sidebar",
+    enabled ? "/api/services/sidebar" : null,
     fetcher,
-    { refreshInterval: 5000 }
+    { refreshInterval: enabled ? 5000 : 0 }
   );
 
   return {

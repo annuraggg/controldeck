@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { pm2JList } from "@/lib/pm2";
+import { requireApiAuth } from "@/lib/auth";
+import { isServiceAllowed } from "@/lib/rbac";
 
 export async function GET(
   req: Request,
   { params }: { params: { name: string } }
 ) {
+  const auth = await requireApiAuth(req, {
+    permission: "services:read",
+    serviceName: params.name,
+  });
+  if (auth.response) return auth.response;
+
+  if (!isServiceAllowed(auth.user, params.name)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const list = await pm2JList();
   const proc = list.find((p) => p.name === params.name);
 
