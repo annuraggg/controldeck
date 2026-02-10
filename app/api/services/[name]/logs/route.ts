@@ -3,6 +3,8 @@ import { execFile } from "child_process";
 import { requireApiAuth } from "@/lib/auth";
 import { isValidServiceName } from "@/lib/validation";
 
+const MAX_LOG_LINES = 5000;
+
 function run(args: string[]) {
   return new Promise<string>((resolve, reject) => {
     execFile(
@@ -34,9 +36,9 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const lines = searchParams.get("lines") || "200";
   const parsedLines = Number.parseInt(lines, 10);
-  if (!Number.isFinite(parsedLines) || parsedLines <= 0 || parsedLines > 5000) {
+  if (!Number.isFinite(parsedLines) || parsedLines <= 0 || parsedLines > MAX_LOG_LINES) {
     return NextResponse.json(
-      { error: "Lines must be a positive number up to 5000" },
+      { error: `Lines must be a positive number up to ${MAX_LOG_LINES}` },
       { status: 400 }
     );
   }
