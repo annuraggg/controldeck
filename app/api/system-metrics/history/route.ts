@@ -6,11 +6,15 @@ import {
   HISTORY_MAX_SAMPLES,
   METRIC_SAMPLE_INTERVAL_MS,
 } from "@/lib/systemMetrics";
+import { requireApiAuth } from "@/lib/auth";
 
-const DEFAULT_HOURS = 2;
+const DEFAULT_HOURS = 1;
 const MAX_HOURS = 24;
 
 export async function GET(request: Request) {
+  const auth = await requireApiAuth(request, { permission: "metrics:read" });
+  if (auth.response) return auth.response;
+
   const { searchParams } = new URL(request.url);
   const hoursParam = Number(searchParams.get("hours"));
 

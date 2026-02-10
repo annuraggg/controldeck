@@ -14,10 +14,13 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { hasPermission } from "@/lib/rbac";
 
 export default function NewServicePage() {
   const router = useRouter();
   const { settings, isLoading } = useSettings();
+  const { user, isLoading: authLoading } = useAuth();
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +72,8 @@ export default function NewServicePage() {
   }
 
   const readOnly = settings?.readOnly;
-  const disabled = submitting || readOnly || isLoading;
+  const canCreate = hasPermission(user, "services:write");
+  const disabled = submitting || readOnly || isLoading || !canCreate || authLoading;
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -83,6 +87,11 @@ export default function NewServicePage() {
         {readOnly && (
           <p className="text-sm text-yellow-700">
             Read-only mode enabled. Creating services is disabled.
+          </p>
+        )}
+        {!canCreate && !authLoading && (
+          <p className="text-sm text-muted-foreground">
+            You do not have permission to create services.
           </p>
         )}
       </div>
