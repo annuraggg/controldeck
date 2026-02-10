@@ -4,6 +4,7 @@ import Service from "@/models/service";
 import { getSettings } from "@/lib/settings";
 import { requireApiAuth } from "@/lib/auth";
 import { isServiceAllowed } from "@/lib/rbac";
+import { isValidServiceName } from "@/lib/validation";
 
 export async function GET(req: Request) {
   const auth = await requireApiAuth(req, { permission: "services:read" });
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
+  if (!isValidServiceName(body.name)) {
+    return NextResponse.json(
+      { error: "Service name must contain only letters, numbers, dot, underscore or dash" },
+      { status: 400 }
+    );
+  }
   if (!isServiceAllowed(auth.user, body.name)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

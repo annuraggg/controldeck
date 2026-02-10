@@ -1,5 +1,4 @@
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Session from "@/models/session";
@@ -11,12 +10,13 @@ import {
   isServiceAllowed,
   permissionsForRole,
 } from "./rbac";
+import { randomHex, sha256Hex } from "./cryptoUtils";
 
 export const SESSION_COOKIE = "cd.session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 
-function hashToken(token: string) {
-  return crypto.createHash("sha256").update(token).digest("hex");
+async function hashToken(token: string) {
+  return sha256Hex(token);
 }
 
 export async function hashPassword(password: string) {
@@ -49,8 +49,9 @@ export async function getUserForSessionToken(
   if (!token) return null;
 
   await connectDB();
+  const tokenHash = await hashToken(token);
   const session = await Session.findOne({
-    tokenHash: hashToken(token),
+    tokenHash,
     expiresAt: { $gt: new Date() },
   }).lean();
 
@@ -77,12 +78,13 @@ export async function getAuthUser(req: Request) {
 }
 
 export async function createSession(userId: string) {
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = randomHex(32);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
   await connectDB();
+  const tokenHash = await hashToken(token);
   await Session.create({
-    tokenHash: hashToken(token),
+    tokenHash,
     userId,
     expiresAt,
   });
@@ -93,7 +95,8 @@ export async function createSession(userId: string) {
 export async function destroySession(token?: string | null) {
   if (!token) return;
   await connectDB();
-  await Session.deleteOne({ tokenHash: hashToken(token) });
+  const tokenHash = await hashToken(token);
+  await Session.deleteOne({ tokenHash });
 }
 
 export function unauthorized() {

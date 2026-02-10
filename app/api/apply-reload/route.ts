@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";
 import { generateEcosystem } from "@/lib/generateEcosystem";
 import { hashServices } from "@/lib/hashService";
 import { requireApiAuth } from "@/lib/auth";
 
-function run(cmd: string) {
+function run(args: string[]) {
   return new Promise<string>((resolve, reject) => {
-    exec(cmd, (err, stdout, stderr) => {
+    execFile("pm2", args, (err, stdout, stderr) => {
       if (err) reject(stderr || err.message);
       else resolve(stdout);
     });
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   ensureEcosystemFile(settings.ecosystemPath);
   await generateEcosystem(settings.ecosystemPath);
 
-  const output = await run(`pm2 reload ${settings.ecosystemPath}`);
+  const output = await run(["reload", settings.ecosystemPath]);
 
   settings.lastAppliedHash = await hashServices();
   await settings.save();
