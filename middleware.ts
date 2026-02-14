@@ -22,20 +22,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const user = await fetch(new URL("/api/auth/me", request.url), {
-    headers: { cookie: request.headers.get("cookie") ?? "" },
-    cache: "no-store",
-  })
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data) => data?.user)
-    .catch(() => null);
-
-  if (!user) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
   return NextResponse.next();
 }
 
