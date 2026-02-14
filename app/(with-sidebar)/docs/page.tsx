@@ -1,111 +1,94 @@
+import { BookText, Lock, Radar, Rocket, ServerCog, Shield } from "lucide-react";
+
 const sections = [
-  { id: "overview", title: "Overview" },
-  { id: "architecture", title: "Architecture" },
-  { id: "drift", title: "Drift & Apply" },
-  { id: "pm2-controls", title: "PM2 Controls" },
-  { id: "rbac", title: "RBAC & Security" },
-  { id: "readonly", title: "Read-only mode" },
+  { id: "overview", title: "Overview", icon: BookText },
+  { id: "architecture", title: "Architecture", icon: ServerCog },
+  { id: "drift", title: "Drift & Apply", icon: Radar },
+  { id: "pm2-controls", title: "PM2 Controls", icon: Rocket },
+  { id: "rbac", title: "RBAC & Security", icon: Shield },
+  { id: "readonly", title: "Read-only Mode", icon: Lock },
 ];
 
 export default function DocsPage() {
   return (
-    <div className="grid gap-8 lg:grid-cols-[260px,1fr]">
-      <div className="rounded-xl border bg-background/50 p-4 shadow-sm lg:sticky lg:top-24 h-fit">
-        <p className="text-xs font-semibold uppercase text-muted-foreground">Docs</p>
-        <ul className="mt-3 space-y-2 text-sm">
+    <div className="grid gap-6 lg:grid-cols-[280px,minmax(0,1fr)]">
+      <aside className="h-fit rounded-xl border bg-card/95 p-4 shadow-sm lg:sticky lg:top-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Documentation Index
+        </p>
+        <nav className="mt-3 space-y-1.5">
           {sections.map((section) => (
-            <li key={section.id}>
-              <a
-                href={`#${section.id}`}
-                className="flex items-center gap-2 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-primary/80" />
-                {section.title}
-              </a>
-            </li>
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+            >
+              <section.icon className="h-4 w-4" />
+              {section.title}
+            </a>
           ))}
-        </ul>
-      </div>
+        </nav>
+      </aside>
 
-      <div className="space-y-10 rounded-xl border bg-background p-6 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold">ControlDeck Docs</h1>
+      <article className="space-y-8 rounded-xl border bg-card p-6 shadow-sm">
+        <div className="space-y-2 border-b pb-4">
+          <h2 className="text-3xl font-semibold">ControlDeck Operating Guide</h2>
           <p className="text-sm text-muted-foreground">
-            Practical guidance for operators running PM2 under enterprise guardrails.
+            Enterprise-friendly runbook for safely operating service lifecycle and change control.
           </p>
         </div>
 
-        <section id="overview" className="space-y-3">
-          <h2 className="text-xl font-semibold">Overview</h2>
+        <section id="overview" className="space-y-2">
+          <h3 className="text-xl font-semibold">Overview</h3>
           <p className="text-muted-foreground">
-            ControlDeck is a single-server control plane for PM2. Desired intent lives in
-            MongoDB, is rendered into an ecosystem file on demand, and is only pushed to PM2
-            when an operator explicitly applies. Live controls stay deliberate and scoped by RBAC.
+            ControlDeck separates desired state, generated deployment configuration, and runtime
+            process controls. Operators explicitly apply changes and can audit drift at any point.
           </p>
         </section>
 
-        <section id="architecture" className="space-y-3">
-          <h2 className="text-xl font-semibold">Architecture</h2>
-          <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-            <li>
-              <strong>Intent store (MongoDB):</strong> canonical data for services, settings, and
-              user accounts.
-            </li>
-            <li>
-              <strong>Generated ecosystem:</strong> written to the configured path when you apply.
-              It mirrors intent but is never mutated implicitly.
-            </li>
-            <li>
-              <strong>PM2 runtime:</strong> processes currently running. Runtime controls do not
-              change stored intent.
-            </li>
-            <li>
-              <strong>Metrics sampler:</strong> background cron captures CPU and memory every 30s
-              with a 24h TTL for historical views.
-            </li>
+        <section id="architecture" className="space-y-2">
+          <h3 className="text-xl font-semibold">Architecture</h3>
+          <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
+            <li>MongoDB stores source-of-truth settings, users, and services.</li>
+            <li>Ecosystem config is generated on demand from intent.</li>
+            <li>PM2 runtime actions remain isolated from config persistence.</li>
+            <li>Metrics snapshotter stores system history for trend analysis.</li>
           </ul>
         </section>
 
-        <section id="drift" className="space-y-3">
-          <h2 className="text-xl font-semibold">Drift & Apply</h2>
+        <section id="drift" className="space-y-2">
+          <h3 className="text-xl font-semibold">Drift & Apply</h3>
           <p className="text-muted-foreground">
-            Drift highlights when the last applied hash no longer matches stored intent. Apply
-            regenerates the ecosystem file only; Apply & Reload PM2 regenerates and reloads the
-            runtime. Neither action is automated to keep change control explicit.
+            Drift indicates applied configuration hash mismatch. Apply updates the ecosystem file;
+            Apply & Reload updates both file and PM2 runtime with explicit operator confirmation.
           </p>
         </section>
 
-        <section id="pm2-controls" className="space-y-3">
-          <h2 className="text-xl font-semibold">PM2 Controls</h2>
+        <section id="pm2-controls" className="space-y-2">
+          <h3 className="text-xl font-semibold">PM2 Controls</h3>
           <p className="text-muted-foreground">
-            Start/stop/restart target the PM2 runtime for the scoped service. They respect service
-            permissions, per-service scopes, and read-only mode. Bulk controls follow the same
-            guardrails.
+            Start, stop, restart, and bulk actions are permission-scoped and respect read-only
+            mode. Runtime actions do not rewrite configuration intent.
           </p>
         </section>
 
-        <section id="rbac" className="space-y-3">
-          <h2 className="text-xl font-semibold">RBAC & Security</h2>
-          <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-            <li>Admins have full access and can create users.</li>
-            <li>Operators can manage services and runtime within their service scopes.</li>
-            <li>Viewers are read-only across assigned scopes.</li>
-            <li>
-              Sessions are cookie-based; passwords are stored with bcrypt; every API checks role,
-              permission, and scope.
-            </li>
+        <section id="rbac" className="space-y-2">
+          <h3 className="text-xl font-semibold">RBAC & Security</h3>
+          <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
+            <li>Admin: full access, including user and settings management.</li>
+            <li>Operator: service lifecycle and scoped operations.</li>
+            <li>Viewer: read-only visibility across assigned scopes.</li>
           </ul>
         </section>
 
-        <section id="readonly" className="space-y-3">
-          <h2 className="text-xl font-semibold">Read-only mode</h2>
+        <section id="readonly" className="space-y-2">
+          <h3 className="text-xl font-semibold">Read-only Mode</h3>
           <p className="text-muted-foreground">
-            Enabling read-only forces all write actions to short-circuit—service edits, PM2
-            runtime controls, applies, and user management. UI buttons will disable and backend
-            APIs enforce the lock until read-only is turned off.
+            Read-only mode blocks all mutating API operations. UI controls are disabled and backend
+            requests are rejected with clear status messages.
           </p>
         </section>
-      </div>
+      </article>
     </div>
   );
 }
