@@ -3,12 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/user";
-import {
-  SESSION_COOKIE,
-  createSession,
-  hashPassword,
-  verifyPassword,
-} from "@/lib/auth";
+import { createSession, hashPassword, verifyPassword } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/sessionConstants";
 import { permissionsForRole } from "@/lib/rbac";
 import type { Role } from "@/models/user";
 

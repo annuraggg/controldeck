@@ -1,7 +1,8 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { destroySession, parseCookies, SESSION_COOKIE } from "@/lib/auth";
+import { destroySession, parseCookies } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/sessionConstants";
 
 export async function POST(req: Request) {
   const cookies = parseCookies(req.headers.get("cookie"));
