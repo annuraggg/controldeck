@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { destroySession, parseCookies, SESSION_COOKIE } from "@/lib/auth";
 

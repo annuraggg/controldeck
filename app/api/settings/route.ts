@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import path from "path";
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";

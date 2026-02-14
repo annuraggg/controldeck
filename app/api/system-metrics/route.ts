@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import si from "systeminformation";
 import { requireApiAuth } from "@/lib/auth";
 

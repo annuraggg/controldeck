@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { execFile } from "child_process";
 import { requireApiAuth } from "@/lib/auth";

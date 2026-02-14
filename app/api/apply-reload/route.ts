@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { execFile } from "child_process";
 import { getSettings } from "@/lib/settings";
