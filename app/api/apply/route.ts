@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";

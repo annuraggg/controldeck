@@ -11,8 +11,7 @@ import {
   permissionsForRole,
 } from "./rbac";
 import { randomHex, sha256Hex } from "./cryptoUtils";
-
-export const SESSION_COOKIE = "cd.session";
+import { SESSION_COOKIE } from "./sessionConstants";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 
 async function hashToken(token: string) {

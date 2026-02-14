@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { pm2JList } from "@/lib/pm2";
 import { requireApiAuth } from "@/lib/auth";

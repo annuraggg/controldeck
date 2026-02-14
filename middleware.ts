@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, getUserForSessionToken } from "./lib/auth";
+import { SESSION_COOKIE } from "@/lib/sessionConstants";
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout", "/api/auth/me"];
 
@@ -16,7 +16,19 @@ export async function middleware(request: NextRequest) {
   }
 
   const session = request.cookies.get(SESSION_COOKIE)?.value;
-  const user = await getUserForSessionToken(session);
+  if (!session) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const user = await fetch(new URL("/api/auth/me", request.url), {
+    headers: { cookie: request.headers.get("cookie") ?? "" },
+    cache: "no-store",
+  })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => data?.user)
+    .catch(() => null);
 
   if (!user) {
     const loginUrl = new URL("/login", request.url);

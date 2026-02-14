@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import fs from "fs";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
