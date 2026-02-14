@@ -1,5 +1,5 @@
-import crypto from "crypto";
 import Service from "@/models/service";
+import { sha256Hex } from "./cryptoUtils";
 
 export async function hashServices() {
   const services = await Service.find({ enabled: true })
@@ -19,8 +19,5 @@ export async function hashServices() {
     autorestart: s.autorestart,
   }));
 
-  return crypto
-    .createHash("sha256")
-    .update(JSON.stringify(normalized))
-    .digest("hex");
+  return sha256Hex(JSON.stringify(normalized));
 }

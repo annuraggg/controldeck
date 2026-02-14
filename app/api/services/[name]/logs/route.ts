@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { requireApiAuth } from "@/lib/auth";
+import { isValidServiceName } from "@/lib/validation";
 
-function run(cmd: string) {
+const MAX_LOG_LINES = 5000;
+
+function run(args: string[]) {
   return new Promise<string>((resolve, reject) => {
-    exec(cmd, { maxBuffer: 1024 * 1024 * 5 }, (err, stdout, stderr) => {
-      if (err) reject(stderr || err.message);
-      else resolve(stdout);
-    });
+    execFile(
+      "pm2",
+      args,
+      { maxBuffer: 1024 * 1024 * 5 },
+      (err, stdout, stderr) => {
+        if (err) reject(stderr || err.message);
+        else resolve(stdout);
+      }
+    );
   });
 }
 
@@ -21,11 +29,28 @@ export async function GET(
   });
   if (auth.response) return auth.response;
 
+  if (!isValidServiceName(params.name)) {
+    return NextResponse.json({ error: "Invalid service name" }, { status: 400 });
+  }
+
   const { searchParams } = new URL(req.url);
   const lines = searchParams.get("lines") || "200";
+  const parsedLines = Number.parseInt(lines, 10);
+  if (!Number.isFinite(parsedLines) || parsedLines <= 0 || parsedLines > MAX_LOG_LINES) {
+    return NextResponse.json(
+      { error: `Lines must be a positive number up to ${MAX_LOG_LINES}` },
+      { status: 400 }
+    );
+  }
 
   try {
-    const output = await run(`pm2 logs ${params.name} --lines ${lines} --json`);
+    const output = await run([
+      "logs",
+      params.name,
+      "--lines",
+      String(parsedLines),
+      "--json",
+    ]);
 
     // PM2 outputs JSON lines, not an array
     const logs = output

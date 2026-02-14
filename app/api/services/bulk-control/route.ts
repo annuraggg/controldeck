@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";
 import { requireApiAuth } from "@/lib/auth";
 import { isServiceAllowed } from "@/lib/rbac";
+import { isValidServiceName } from "@/lib/validation";
 
-function run(cmd: string) {
+function run(args: string[]) {
   return new Promise<string>((resolve, reject) => {
-    exec(cmd, (err, stdout, stderr) => {
+    execFile("pm2", args, (err, stdout, stderr) => {
       if (err) reject(stderr || err.message);
       else resolve(stdout);
     });
@@ -40,6 +41,11 @@ export async function POST(req: Request) {
     );
   }
 
+  const invalid = names.find((name) => !isValidServiceName(name));
+  if (invalid) {
+    return NextResponse.json({ error: "Invalid service name" }, { status: 400 });
+  }
+
   const unauthorized = names.find((name) => !isServiceAllowed(auth.user, name));
   if (unauthorized) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -59,11 +65,9 @@ export async function POST(req: Request) {
     try {
       let output = "";
       if (action === "start") {
-        output = await run(
-          `pm2 start ${settings.ecosystemPath} --only ${name}`
-        );
+        output = await run(["start", settings.ecosystemPath, "--only", name]);
       } else {
-        output = await run(`pm2 ${action} ${name}`);
+        output = await run([action, name]);
       }
       results[name] = { success: true, output };
     } catch (e) {

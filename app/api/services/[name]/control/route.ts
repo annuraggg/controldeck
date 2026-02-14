@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { getSettings } from "@/lib/settings";
 import { ensureEcosystemFile } from "@/lib/ensureEcosystem";
 import { requireApiAuth } from "@/lib/auth";
+import { isValidServiceName } from "@/lib/validation";
 
-function run(cmd: string) {
+function run(args: string[]) {
   return new Promise<string>((resolve, reject) => {
-    exec(cmd, (err, stdout, stderr) => {
+    execFile("pm2", args, (err, stdout, stderr) => {
       if (err) reject(stderr || err.message);
       else resolve(stdout);
     });
@@ -18,6 +19,9 @@ export async function POST(
   { params }: { params: Promise<{ name: string }> }
 ) {
   const name = (await params).name;
+  if (!isValidServiceName(name)) {
+    return NextResponse.json({ error: "Invalid service name" }, { status: 400 });
+  }
   const auth = await requireApiAuth(req, {
     permission: "services:control",
     serviceName: name,
@@ -44,11 +48,9 @@ export async function POST(
     let output = "";
 
     if (action === "start") {
-      output = await run(
-        `pm2 start ${settings.ecosystemPath} --only ${name}`
-      );
+      output = await run(["start", settings.ecosystemPath, "--only", name]);
     } else {
-      output = await run(`pm2 ${action} ${name}`);
+      output = await run([action, name]);
     }
 
     return NextResponse.json({ success: true, output });
