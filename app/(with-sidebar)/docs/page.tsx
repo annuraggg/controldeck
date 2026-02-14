@@ -11,8 +11,8 @@ const sections = [
 
 export default function DocsPage() {
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px,minmax(0,1fr)]">
-      <aside className="h-fit rounded-xl border bg-card/95 p-4 shadow-sm lg:sticky lg:top-6">
+    <div className="gap-6 flex">
+      <aside className="rounded-xl border bg-card/95 p-4 shadow-sm lg:sticky lg:top-6 h-full min-w-64">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Documentation Index
         </p>
@@ -30,7 +30,7 @@ export default function DocsPage() {
         </nav>
       </aside>
 
-      <article className="space-y-8 rounded-xl border bg-card p-6 shadow-sm">
+      <article className="space-y-8 rounded-xl border bg-card p-6 shadow-sm h-[78vh] overflow-y-auto">
         <div className="space-y-2 border-b pb-4">
           <h2 className="text-3xl font-semibold">ControlDeck Operating Guide</h2>
           <p className="text-sm text-muted-foreground">

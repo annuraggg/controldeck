@@ -95,9 +95,6 @@ export default function LoginPage() {
         </CardContent>
 
         <CardFooter className="flex-col gap-2 text-center text-xs text-muted-foreground">
-          <p>
-            First user becomes admin automatically. Admins can later create scoped users.
-          </p>
           <p className="opacity-80">
             Made with ❤️ by{" "}
             <a
